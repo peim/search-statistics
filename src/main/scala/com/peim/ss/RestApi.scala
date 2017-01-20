@@ -22,11 +22,10 @@ trait RestRoutes extends SummaryServiceApi with JsonMappings {
 
   import StatusCodes._
 
-  def routes: Route = pathPrefix("search") {
-    pathEndOrSingleSlash {
-      // GET /search
-      get {
-        onSuccess(getSummaries("hello")) { summaries =>
+  def routes: Route = path("search") {
+    get {
+      parameters('query.as[String].*) { queries =>
+        onSuccess(getSummaries(queries.toList)) { summaries =>
           complete(OK, summaries)
         }
       }
@@ -43,6 +42,6 @@ trait SummaryServiceApi {
 
   lazy val summaryService = createSummaryService()
 
-  def getSummaries(param: String) = summaryService.ask(GetSummaries(param)).mapTo[Summaries]
+  def getSummaries(queries: List[String]) = summaryService.ask(GetSummaries(queries)).mapTo[Summaries]
 }
 
