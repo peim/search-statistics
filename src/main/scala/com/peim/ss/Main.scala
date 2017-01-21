@@ -48,7 +48,7 @@ object Main extends App with RequestTimeout {
 
   responseFuture.onComplete {
     case Success(result) => {
-      val res = result.entity.dataBytes
+      result.entity.dataBytes
         .map(_.utf8String)
         .runReduce(_ + _)
         .onComplete {

@@ -11,7 +11,7 @@ object SummaryService {
   case class Summary(domain: String, count: Int)
   case class Summaries(summaries: Vector[Summary])
 
-  case class GetSummaries(queries: List[String])
+  case class GetSummaries(queries: Set[String])
 }
 
 class SummaryService(implicit timeout: Timeout) extends Actor {
@@ -20,7 +20,7 @@ class SummaryService(implicit timeout: Timeout) extends Actor {
 
   def receive = {
     case GetSummaries(queries) => {
-      queries match {
+      queries.toList match {
         case Nil => sender ! Summaries(Vector(Summary("default.net", 5)))
         case query :: Nil => sender ! Summaries(Vector(Summary(query + ".com", 5)))
         case multiple => sender ! Summaries(multiple.map(query => Summary(query + ".org", 5)).toVector)
