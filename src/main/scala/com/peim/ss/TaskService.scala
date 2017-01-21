@@ -26,6 +26,6 @@ class SummaryService(implicit timeout: Timeout) extends Actor {
         case multiple => sender ! Summaries(multiple.map(query => Summary(query + ".org", 5)).toVector)
       }
 
+    }
   }
-}
 }
