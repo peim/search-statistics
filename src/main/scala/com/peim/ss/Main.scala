@@ -8,7 +8,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.util.ByteString
+import akka.util.{ByteString, Timeout}
 import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.duration._
@@ -16,18 +16,18 @@ import scala.xml.XML
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-object Main extends App with RequestTimeout {
+object Main extends App {
 
   val config = ConfigFactory.load()
   val host = config.getString("http.host")
   val port = config.getInt("http.port")
 
-  implicit val system = ActorSystem()
+  implicit val system = ActorSystem("search-statistics")
   implicit val executionContext = system.dispatcher
-
-  val restApi = new RestApi(system, requestTimeout(config)).routes
-
   implicit val materializer = ActorMaterializer()
+  implicit val timeout = Timeout(30 seconds)
+
+  val restApi = new RestApi(system, timeout).routes
   val bindingFuture: Future[ServerBinding] =
     Http().bindAndHandle(restApi, host, port)
 
