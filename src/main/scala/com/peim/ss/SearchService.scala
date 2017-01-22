@@ -3,10 +3,10 @@ package com.peim.ss
 import akka.actor.{Actor, Props}
 import akka.util.Timeout
 
-object SummaryService {
+object SearchService {
 
-  def props(implicit timeout: Timeout) = Props(new SummaryService)
-  def name = "summaryService"
+  def props(implicit timeout: Timeout) = Props(new SearchService)
+  def name = "searchReportService"
 
   case class Summary(domain: String, count: Int)
   case class Summaries(summaries: Vector[Summary])
@@ -14,9 +14,9 @@ object SummaryService {
   case class GetSummaries(queries: Set[String])
 }
 
-class SummaryService(implicit timeout: Timeout) extends Actor {
+class SearchService(implicit timeout: Timeout) extends Actor {
 
-  import SummaryService._
+  import SearchService._
 
   def receive = {
     case GetSummaries(queries) => {

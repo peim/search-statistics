@@ -8,17 +8,17 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import com.peim.ss.SummaryService._
-import com.peim.ss.SummaryService.{GetSummaries}
+import com.peim.ss.SearchService._
+import com.peim.ss.SearchService.{GetSummaries}
 
 class RestApi(system: ActorSystem, timeout: Timeout) extends RestRoutes {
   implicit val requestTimeout = timeout
   implicit val executionContext = system.dispatcher
 
-  def createSummaryService = system.actorOf(SummaryService.props, SummaryService.name)
+  def createSearchService = system.actorOf(SearchService.props, SearchService.name)
 }
 
-trait RestRoutes extends SummaryServiceApi with JsonMappings {
+trait RestRoutes extends SearchServiceApi with JsonMappings {
 
   import StatusCodes._
 
@@ -33,15 +33,15 @@ trait RestRoutes extends SummaryServiceApi with JsonMappings {
   }
 }
 
-trait SummaryServiceApi {
+trait SearchServiceApi {
 
-  def createSummaryService(): ActorRef
+  def createSearchService(): ActorRef
 
   implicit def executionContext: ExecutionContext
   implicit def requestTimeout: Timeout
 
-  lazy val summaryService = createSummaryService()
+  lazy val searchService = createSearchService()
 
-  def getSummaries(queries: Set[String]) = summaryService.ask(GetSummaries(queries)).mapTo[Summaries]
+  def getSummaries(queries: Set[String]) = searchService.ask(GetSummaries(queries)).mapTo[Summaries]
 }
 

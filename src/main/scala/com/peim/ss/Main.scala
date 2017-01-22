@@ -28,12 +28,10 @@ object Main extends App {
   implicit val timeout = Timeout(30 seconds)
 
   val restApi = new RestApi(system, timeout).routes
-  val bindingFuture: Future[ServerBinding] =
-    Http().bindAndHandle(restApi, host, port)
-
   val log = Logging(system.eventStream, "search-statistics")
-  bindingFuture.map { serverBinding =>
-    log.info(s"RestApi bound to ${serverBinding.localAddress} ")
+
+  Http().bindAndHandle(restApi, host, port).map {
+    serverBinding => log.info(s"RestApi bound to ${serverBinding.localAddress} ")
   }.onFailure {
     case ex: Exception =>
       log.error(ex, "Failed to bind to {}:{}!", host, port)
@@ -41,34 +39,34 @@ object Main extends App {
   }
 
 
-  val uri = "/blogs/rss/search?text=scala&numdoc=10"
-
-  val connectionFlow: Flow[HttpRequest, HttpResponse, Future[Http.OutgoingConnection]] =
-    Http().outgoingConnection("yandex.ru")
-  val responseFuture: Future[HttpResponse] =
-    Source.single(HttpRequest(uri = uri))
-      .via(connectionFlow)
-      .runWith(Sink.head)
-
-  responseFuture.onComplete {
-    case Success(result) => {
-      result.entity.dataBytes
-        .map(_.utf8String)
-        .runReduce(_ + _)
-        .onComplete {
-        case Success(body) => {
-          val xml = XML.loadString(body)
-          val links = (xml \\ "item" \\ "link").map(_.text).toVector
-
-          print(links)
-
-          body
-        }
-        case Failure(fail) => ""
-      }
-    }
-    case Failure(fail) => println("fail" + fail)
-  }
+//  val uri = "/blogs/rss/search?text=scala&numdoc=10"
+//
+//  val connectionFlow: Flow[HttpRequest, HttpResponse, Future[Http.OutgoingConnection]] =
+//    Http().outgoingConnection("yandex.ru")
+//  val responseFuture: Future[HttpResponse] =
+//    Source.single(HttpRequest(uri = uri))
+//      .via(connectionFlow)
+//      .runWith(Sink.head)
+//
+//  responseFuture.onComplete {
+//    case Success(result) => {
+//      result.entity.dataBytes
+//        .map(_.utf8String)
+//        .runReduce(_ + _)
+//        .onComplete {
+//          case Success(body) => {
+//            val xml = XML.loadString(body)
+//            val links = (xml \\ "item" \\ "link").map(_.text).toVector
+//
+//            print(links)
+//
+//            body
+//          }
+//          case Failure(fail) => ""
+//        }
+//    }
+//    case Failure(fail) => println("fail" + fail)
+//  }
 }
 
 
