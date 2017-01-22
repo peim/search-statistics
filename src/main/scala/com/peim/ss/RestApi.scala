@@ -9,10 +9,8 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.impl.fusing.GraphInterpreter.Connection
 import akka.stream.scaladsl.Flow
 import com.peim.ss.SearchService._
-import com.peim.ss.SearchService.GetSummaries
 
 class RestApi(system: ActorSystem, timeout: Timeout) extends RestRoutes {
   implicit val actorSystem = system
@@ -51,7 +49,5 @@ trait SearchServiceApi {
 
   def getReport(queries: Set[String]) =
     searchService.ask(GetReport(connectionFlow, queries)).mapTo[Summaries]
-
-  //def getSummaries(queries: Set[String]) = searchService.ask(GetSummaries(queries)).mapTo[Summaries]
 }
 
