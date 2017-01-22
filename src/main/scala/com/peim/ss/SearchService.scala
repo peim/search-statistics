@@ -1,5 +1,7 @@
 package com.peim.ss
 
+import java.net.URL
+
 import akka.actor.{Actor, Props}
 import akka.event.Logging
 import akka.http.scaladsl.Http
@@ -12,7 +14,7 @@ import akka.util.Timeout
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 object SearchService {
 
@@ -37,16 +39,48 @@ class SearchService(implicit timeout: Timeout) extends Actor {
 
   def receive = {
     case GetReport(connectionFlow, queries) => {
-
-      queries.map(query => s"/blogs/rss/search?text=${query}&numdoc=10")
+      val originSender = sender
+      val res = queries.map(query => s"/blogs/rss/search?text=${query}&numdoc=10")
         .map(uri => router.ask(Source.single(HttpRequest(uri = uri)).via(connectionFlow).runWith(Sink.head)).mapTo[List[String]])
-        .foreach(data => data.onComplete {
-          case Success(data) => println(data)
-          case Failure(fail) => println("Error :" + fail)
-        })
+
+      val rr = Future.reduce(res){
+        case l: (List[String],List[String]) => l._1 ::: l._2
+      }
+
+      rr.onComplete {
+        case Success(response) => {
+          println(response)
+          println(response.length)
+
+//          result ::: response
+//          originSender !
+        }
+        case Failure(ex) => {
+          log.error(ex, "Error getting response")
+          originSender ! None
+        }
+      }
+
+
+
+
+//        .foreach(request => request.onComplete {
+//          case Success(response) => {
+//            result ::: response
+//            originSender !
+//          }
+//          case Failure(ex) => {
+//            log.error(ex, "Error getting response")
+//            originSender ! None
+//          }
+    //    })
+
+
+
 
       sender ! Report(Map("hello.com" -> 5, "vk.com" -> 6))
     }
 
   }
+
 }
