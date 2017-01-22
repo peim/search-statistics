@@ -40,47 +40,27 @@ class SearchService(implicit timeout: Timeout) extends Actor {
   def receive = {
     case GetReport(connectionFlow, queries) => {
       val originSender = sender
-      val res = queries.map(query => s"/blogs/rss/search?text=${query}&numdoc=10")
-        .map(uri => router.ask(Source.single(HttpRequest(uri = uri)).via(connectionFlow).runWith(Sink.head)).mapTo[List[String]])
+      val requestFutures = queries.map(query => s"/blogs/rss/search?text=${query}&numdoc=10")
+        .map(uri => router.ask(
+          Source.single(HttpRequest(uri = uri))
+            .via(connectionFlow)
+            .runWith(Sink.head)
+        ).mapTo[List[String]])
 
-      val rr = Future.reduce(res){
-        case l: (List[String],List[String]) => l._1 ::: l._2
-      }
-
-      rr.onComplete {
-        case Success(response) => {
-          println(response)
-          println(response.length)
-
-//          result ::: response
-//          originSender !
+      Future.reduce(requestFutures){
+        case f: (List[String],List[String]) => f._1 ::: f._2
+      }.onComplete {
+        case Success(links) => {
+          originSender ! Report(links.distinct
+            .map((link: String) => new URL(link).getHost)
+            .groupBy(domain => domain)
+            .map(key => key._1 -> key._2.size))
         }
         case Failure(ex) => {
           log.error(ex, "Error getting response")
           originSender ! None
         }
       }
-
-
-
-
-//        .foreach(request => request.onComplete {
-//          case Success(response) => {
-//            result ::: response
-//            originSender !
-//          }
-//          case Failure(ex) => {
-//            log.error(ex, "Error getting response")
-//            originSender ! None
-//          }
-    //    })
-
-
-
-
-      sender ! Report(Map("hello.com" -> 5, "vk.com" -> 6))
     }
-
   }
-
 }
