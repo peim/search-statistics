@@ -29,7 +29,7 @@ trait RestRoutes extends SearchServiceApi with JsonMappings {
     get {
       parameters('query.as[String].*) { queries =>
         onSuccess(getReport(queries.toSet)) { report =>
-          complete(OK, report)
+          complete(OK, report.report)
         }
       }
     }
@@ -48,6 +48,6 @@ trait SearchServiceApi {
   def createConnectionFlow(): Flow[HttpRequest, HttpResponse, Future[Http.OutgoingConnection]]
 
   def getReport(queries: Set[String]) =
-    searchService.ask(GetReport(connectionFlow, queries)).mapTo[Summaries]
+    searchService.ask(GetReport(connectionFlow, queries)).mapTo[Report]
 }
 
