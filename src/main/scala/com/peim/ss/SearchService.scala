@@ -11,6 +11,7 @@ import akka.routing.BalancingPool
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.Timeout
+import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -31,10 +32,14 @@ class SearchService(implicit timeout: Timeout) extends Actor {
 
   implicit val materializer = ActorMaterializer()
 
+  val config = ConfigFactory.load()
+  val conCount = config.getInt("pool.connection-count")
+  val name = config.getString("pool.name")
+
   val log = Logging(context.system, this)
   val router = context.actorOf(
-    BalancingPool(3).props(Props(new RequestHandler(self))),
-    "poolRouter"
+    BalancingPool(conCount).props(Props(new RequestHandler(self))),
+    name
   )
 
   def receive = {
@@ -47,9 +52,7 @@ class SearchService(implicit timeout: Timeout) extends Actor {
             .runWith(Sink.head)
         ).mapTo[List[String]])
 
-      Future.reduce(requestFutures){
-        case f: (List[String],List[String]) => f._1 ::: f._2
-      }.onComplete {
+      Future.reduce(requestFutures)(_ ::: _).onComplete {
         case Success(links) => {
           originSender ! Report(links.distinct
             .map((link: String) => new URL(link).getHost)
